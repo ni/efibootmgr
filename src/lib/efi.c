@@ -35,7 +35,7 @@
 #include <linux/sockios.h>
 #include <linux/types.h>
 #include <net/if.h>
-#include <pci/pci.h>
+//#include <pci/pci.h>
 #include <asm/types.h>
 #include <linux/ethtool.h>
 #include "efi.h"
@@ -190,6 +190,17 @@ select_boot_var_names(const struct dirent *d)
 	return 0;
 }
 
+static int
+select_var_names(const struct dirent *d)
+{
+	int name_len;
+	name_len = strlen(opts.readvar);
+        if (!strncmp(d->d_name, opts.readvar, name_len) &&
+            d->d_name[name_len] == '-')
+                return 1;
+        return 0;
+}
+
 int
 read_boot_var_names(struct dirent ***namelist)
 {
@@ -197,6 +208,16 @@ read_boot_var_names(struct dirent ***namelist)
 	return scandir(fs_kernel_calls->path,
 		       namelist, select_boot_var_names,
 		       alphasort);
+}
+
+int
+
+read_var_names(struct dirent ***namelist)
+{
+        if (!fs_kernel_calls || !namelist) return -1;
+        return scandir(fs_kernel_calls->path,
+                       namelist, select_var_names,
+                       alphasort);
 }
 
 
@@ -314,6 +335,7 @@ struct device
 	struct list_head node;
 };
 
+#if 0
 static struct device *
 is_parent_bridge(struct pci_dev *p, unsigned int target_bus)
 {
@@ -340,7 +362,9 @@ is_parent_bridge(struct pci_dev *p, unsigned int target_bus)
 
 	return d;
 }
+#endif
 
+#if 0
 static struct device *
 find_parent(struct pci_access *pacc, unsigned int target_bus)
 {
@@ -354,7 +378,9 @@ find_parent(struct pci_access *pacc, unsigned int target_bus)
 	}
 	return NULL;
 }
+#endif
 
+#if 0
 static uint16_t
 make_one_pci_device_path(void *dest, uint8_t device, uint8_t function)
 {
@@ -368,7 +394,9 @@ make_one_pci_device_path(void *dest, uint8_t device, uint8_t function)
 	memcpy(dest, &p, p.length);
 	return p.length;
 }
+#endif
 
+#if 0
 static uint16_t
 make_pci_device_path(void *dest, uint8_t bus, uint8_t device, uint8_t function)
 {
@@ -409,6 +437,7 @@ make_pci_device_path(void *dest, uint8_t bus, uint8_t device, uint8_t function)
 
 	return ((void *)p - dest);
 }
+#endif
 
 static uint16_t
 make_scsi_device_path(void *dest, uint16_t id, uint16_t lun)
@@ -426,7 +455,7 @@ make_scsi_device_path(void *dest, uint16_t id, uint16_t lun)
 
 static uint16_t
 make_harddrive_device_path(void *dest, uint32_t num, uint64_t start, uint64_t size,
-			   uint8_t *signature,
+			   char *signature,
 			   uint8_t mbr_type, uint8_t signature_type)
 {
 	HARDDRIVE_DEVICE_PATH p;
@@ -486,7 +515,7 @@ make_edd30_device_path(int fd, void *buffer)
 	}
 
 	p += make_acpi_device_path      (p, EISAID_PNP0A03, bus);
-	p += make_pci_device_path       (p, bus, device, function);
+	//p += make_pci_device_path       (p, bus, device, function);
 	if (interface_type != virtblk) {
 		p += make_scsi_device_path      (p, id, lun);
 	}
@@ -603,7 +632,7 @@ char *make_net_load_option(char *p, char *iface)
     }
 
     p += make_acpi_device_path(p, opts.acpi_hid, opts.acpi_uid);
-    p += make_pci_device_path(p, bus, (uint8_t)slot, (uint8_t)func);
+    //p += make_pci_device_path(p, bus, (uint8_t)slot, (uint8_t)func);
     p += make_mac_addr_device_path(p, ifr.ifr_ifru.ifru_hwaddr.sa_data, 0);
     p += make_end_device_path       (p);
     return(p);

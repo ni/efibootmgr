@@ -32,6 +32,10 @@ typedef struct {
 	char *bootorder;
 	char *testfile;
 	char *extra_opts_file;
+	char *editcreatevar;
+        char *value;
+        char *delvar;
+	char *readvar;
 	uint32_t part;
 	int edd_version;
 	int edd10_devicenum;

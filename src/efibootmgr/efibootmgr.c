@@ -777,37 +777,39 @@ set_active_state()
 static void
 usage()
 {
-	printf("efibootmgr version %s\n", EFIBOOTMGR_VERSION);
-	printf("usage: efibootmgr [options]\n");
-	printf("\t-a | --active         sets bootnum active\n");
-	printf("\t-A | --inactive       sets bootnum inactive\n");
+	//printf("efibootmgr version %s\n", EFIBOOTMGR_VERSION);
+	printf("usage: efimgr [options]\n");
+	//printf("\t-a | --active         sets bootnum active\n");
+	//printf("\t-A | --inactive       sets bootnum inactive\n");
 	printf("\t-b | --bootnum XXXX   modify BootXXXX (hex)\n");
 	printf("\t-B | --delete-bootnum delete bootnum (hex)\n");
 	printf("\t-c | --create         create new variable bootnum and add to bootorder\n");
-	printf("\t-d | --disk disk       (defaults to /dev/sda) containing loader\n");
-	printf("\t-e | --edd [1|3|-1]   force EDD 1.0 or 3.0 creation variables, or guess\n");
-	printf("\t-E | --device num      EDD 1.0 device number (defaults to 0x80)\n");
-	printf("\t-g | --gpt            force disk with invalid PMBR to be treated as GPT\n");
-	printf("\t-H | --acpi_hid XXXX  set the ACPI HID (used with -i)\n");
-	printf("\t-i | --iface name     create a netboot entry for the named interface\n");
-	printf("\t-l | --loader name     (defaults to \\EFI\\redhat\\grub.efi)\n");
-	printf("\t-L | --label label     Boot manager display label (defaults to \"Linux\")\n");
-	printf("\t-n | --bootnext XXXX   set BootNext to XXXX (hex)\n");
-	printf("\t-N | --delete-bootnext delete BootNext\n");
-	printf("\t-o | --bootorder XXXX,YYYY,ZZZZ,...     explicitly set BootOrder (hex)\n");
-	printf("\t-O | --delete-bootorder delete BootOrder\n");
-	printf("\t-p | --part part        (defaults to 1) containing loader\n");
-	printf("\t-q | --quiet            be quiet\n");
-	printf("\t   | --test filename    don't write to NVRAM, write to filename.\n");
-	printf("\t-t | --timeout seconds  set boot manager timeout waiting for user input.\n");
-	printf("\t-T | --delete-timeout   delete Timeout.\n");
-	printf("\t-u | --unicode | --UCS-2  pass extra args as UCS-2 (default is ASCII)\n");
-	printf("\t-U | --acpi_uid XXXX    set the ACPI UID (used with -i)\n");
-	printf("\t-v | --verbose          print additional information\n");
-	printf("\t-V | --version          return version and exit\n");
-	printf("\t-w | --write-signature  write unique sig to MBR if needed\n");
-	printf("\t-@ | --append-binary-args file  append extra args from file (use \"-\" for stdin)\n");
-	printf("\t   | --help             show help/usage\n");
+	printf("\t-d | --disk disk      (defaults to /dev/sda) containing loader\n");
+	//printf("\t-e | --edd [1|3|-1]   force EDD 1.0 or 3.0 creation variables, or guess\n");
+        printf("\t-f | --		add a new variable -f [var name] [var value]    \n");
+	//printf("\t-E | --device num      EDD 1.0 device number (defaults to 0x80)\n");
+	//printf("\t-g | --gpt            force disk with invalid PMBR to be treated as GPT\n");
+	//printf("\t-H | --acpi_hid XXXX  set the ACPI HID (used with -i)\n");
+	//printf("\t-i | --iface name     create a netboot entry for the named interface\n");
+	printf("\t-l | --loader name    (defaults to \\elilo.efi)\n");
+	printf("\t-L | --label label    Boot manager display label (defaults to \"Linux\")\n");
+	printf("\t-n | --bootnext XXXX  set BootNext to XXXX (hex)\n");
+	//printf("\t-N | --delete-bootnext delete BootNext\n");
+	//printf("\t-o | --bootorder XXXX,YYYY,ZZZZ,...     explicitly set BootOrder (hex)\n");
+	//printf("\t-O | --delete-bootorder delete BootOrder\n");
+	printf("\t-p | --part part      (defaults to 1) containing loader\n");
+	//printf("\t-q | --quiet            be quiet\n");
+	//printf("\t   | --test filename    don't write to NVRAM, write to filename.\n");
+        printf("\t-r | --read		-r [var name] returns variable value \n");
+        printf("\t-s | --	  	-s [var name] removes variable\n");
+	//printf("\t-t | --timeout seconds  set boot manager timeout waiting for user input.\n");
+	//printf("\t-T | --delete-timeout   delete Timeout.\n");
+	//printf("\t-u | --unicode | --UCS-2  pass extra args as UCS-2 (default is ASCII)\n");
+	//printf("\t-U | --acpi_uid XXXX    set the ACPI UID (used with -i)\n");
+	//printf("\t-v | --verbose          print additional information\n");
+	//printf("\t-V | --version          return version and exit\n");
+	//printf("\t-w | --write-signature  write unique sig to MBR if needed\n");
+	//printf("\t-@ | --append-binary-args file  append extra args from file (use \"-\" for stdin)\n");
 }
 
 static void
@@ -826,6 +828,7 @@ set_default_opts()
 	opts.part            = 1;
 	opts.acpi_hid        = -1;
 	opts.acpi_uid        = -1;
+	opts.quiet	     = 1;
 }
 
 static void
@@ -833,6 +836,7 @@ parse_opts(int argc, char **argv)
 {
 	int c, num, rc;
 	int option_index = 0;
+	int val_len, index;
 
 	while (1)
 	{
@@ -849,6 +853,7 @@ parse_opts(int argc, char **argv)
 			{"acpi_hid",         required_argument, 0, 'H'},
 			{"edd-device",       required_argument, 0, 'E'},
 			{"edd30",            required_argument, 0, 'e'},
+			{"fval",	     required_argument, 0, 'f'},
 			{"gpt",                    no_argument, 0, 'g'},
 			{"loader",           required_argument, 0, 'l'},
 			{"label",            required_argument, 0, 'L'},
@@ -859,6 +864,8 @@ parse_opts(int argc, char **argv)
 			{"part",             required_argument, 0, 'p'},
 			{"quiet",                  no_argument, 0, 'q'},
 			{"test",             required_argument, 0,   1},
+                        {"cvar",             required_argument, 0, 'r'},
+                        {"dvar",             required_argument, 0, 's'},
 			{"timeout",          required_argument, 0, 't'},
 			{"delete-timeout",         no_argument, 0, 'T'},
 			{"unicode",                no_argument, 0, 'u'},
@@ -868,12 +875,11 @@ parse_opts(int argc, char **argv)
 			{"version",                no_argument, 0, 'V'},
 			{"write-signature",        no_argument, 0, 'w'},
 			{"append-binary-args", required_argument, 0, '@'},
-			{"help",                   no_argument, 0,   2},
 			{0, 0, 0, 0}
 		};
 
 		c = getopt_long (argc, argv,
-				 "AaBb:cd:e:E:gH:i:l:L:n:No:Op:qt:TuU:v::Vw@:",
+				 "AaBb:cd:e:f:E:gH:i:l:L:n:No:Op:qr:s:t:TuU:v::Vw@:",
 				 long_options, &option_index);
 		if (c == -1)
 			break;
@@ -922,6 +928,28 @@ parse_opts(int argc, char **argv)
 				exit(1);
 			}
 			break;
+		case 'f':
+			val_len = 0;
+			opts.editcreatevar = optarg;
+			index = optind;
+			while (index < argc && argv[index][0] != '-'){
+				val_len = val_len + strlen(argv[index]);
+				val_len = val_len + 1;//space character
+				index = index + 1;
+			}
+			if (val_len == 0){
+				break;
+			}
+			opts.value = malloc (val_len-1);//except last space
+			index = optind+1;
+			strcpy (opts.value, argv[optind]);
+			while (index < argc && argv[index][0] != '-'){
+				strcat(opts.value, " ");
+                                strcat(opts.value, argv[index]);
+                                index += 1;
+                        }
+			optind = index-1;
+                        break;
 		case 'g':
 			opts.forcegpt = 1;
 			break;
@@ -968,10 +996,16 @@ parse_opts(int argc, char **argv)
 			}
 			break;
 		case 'q':
-			opts.quiet = 1;
+			opts.quiet = 0;
 			break;
 		case 1:
 			opts.testfile = optarg;
+			break;
+		case 'r':
+			opts.readvar = optarg;
+			break;
+		case 's':
+			opts.delvar = optarg;
 			break;
 		case 't':
 			rc = sscanf(optarg, "%u", &num);
@@ -1020,10 +1054,6 @@ parse_opts(int argc, char **argv)
 			opts.write_signature = 1;
 			break;
 
-		case 2:
-			usage();
-			exit(1);
-
 		default:
 			usage();
 			exit(1);
@@ -1037,6 +1067,52 @@ parse_opts(int argc, char **argv)
 	}
 }
 
+static efi_status_t
+editcreatevar()
+{
+	efi_variable_t new_var;
+	memset(&new_var, 0, sizeof(new_var));
+	fill_var(&new_var, opts.editcreatevar);
+
+	if (opts.value){
+ 		new_var.DataSize = strlen(opts.value);
+		memset(&(new_var.Data), 0, new_var.DataSize);
+		memcpy(new_var.Data, opts.value, new_var.DataSize) ;
+	}
+
+	return create_or_edit_variable(&new_var);
+}
+
+static efi_status_t
+showvariable()
+{
+	struct dirent  **var_names = NULL;
+	efi_variable_t var;
+	efi_status_t status = EFI_NOT_FOUND;
+	int var_num, i ;
+
+	var_num = read_var_names(&var_names);
+	if(!var_names){
+		//wrong input
+		return EFI_NOT_FOUND;
+	}
+
+	memset(&var, 0, sizeof(var));
+	for(i=0; i<var_num; i++){
+		if(var_names[i]){
+			status = read_variable(var_names[i]->d_name,
+					       &var);
+		        if(status == EFI_SUCCESS){
+		                printf("%s\n", (char*) &var.Data);
+        		}
+			else{
+				return status;
+			}
+
+		}
+	}
+	return status;
+}
 
 int
 main(int argc, char **argv)
@@ -1145,6 +1221,19 @@ main(int argc, char **argv)
 			show_boot_vars();
 		}
 	}
+
+	if (opts.delvar){
+		delete_var(opts.delvar);
+	}
+
+	if (opts.editcreatevar){
+		editcreatevar();
+	}
+
+	if (opts.readvar){
+		showvariable();
+	}
+
 	free_dirents(boot_names, num_boot_names);
 	free_vars(&boot_entry_list);
 	if (ret)

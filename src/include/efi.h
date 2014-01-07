@@ -366,6 +366,7 @@ extern efi_status_t create_or_edit_variable(efi_variable_t *var);
 
 extern void set_fs_kernel_calls();
 extern int read_boot_var_names(struct dirent ***namelist);
+extern int read_var_names(struct dirent ***namelist);
 extern int variable_to_name(efi_variable_t *var, char *name);
 extern int var_name_to_path(const char *name, char *path);
 
