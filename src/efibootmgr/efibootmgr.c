@@ -49,7 +49,7 @@
 #include "unparse_path.h"
 #include "disk.h"
 #include "efibootmgr.h"
-
+#include "niBIOSFeedback.h"
 
 #ifndef EFIBOOTMGR_VERSION
 #define EFIBOOTMGR_VERSION "unknown (fix Makefile!)"
@@ -777,39 +777,40 @@ set_active_state()
 static void
 usage()
 {
-	//printf("efibootmgr version %s\n", EFIBOOTMGR_VERSION);
+	printf("efibootmgr version %s\n", EFIBOOTMGR_VERSION);
 	printf("usage: efimgr [options]\n");
-	//printf("\t-a | --active         sets bootnum active\n");
-	//printf("\t-A | --inactive       sets bootnum inactive\n");
+	printf("\t-a | --active         sets bootnum active\n");
+	printf("\t-A | --inactive       sets bootnum inactive\n");
 	printf("\t-b | --bootnum XXXX   modify BootXXXX (hex)\n");
 	printf("\t-B | --delete-bootnum delete bootnum (hex)\n");
 	printf("\t-c | --create         create new variable bootnum and add to bootorder\n");
 	printf("\t-d | --disk disk      (defaults to /dev/sda) containing loader\n");
-	//printf("\t-e | --edd [1|3|-1]   force EDD 1.0 or 3.0 creation variables, or guess\n");
+	printf("\t-e | --edd [1|3|-1]   force EDD 1.0 or 3.0 creation variables, or guess\n");
         printf("\t-f | --		add a new variable -f [var name] [var value]    \n");
-	//printf("\t-E | --device num      EDD 1.0 device number (defaults to 0x80)\n");
-	//printf("\t-g | --gpt            force disk with invalid PMBR to be treated as GPT\n");
-	//printf("\t-H | --acpi_hid XXXX  set the ACPI HID (used with -i)\n");
-	//printf("\t-i | --iface name     create a netboot entry for the named interface\n");
+	printf("\t-E | --device num      EDD 1.0 device number (defaults to 0x80)\n");
+	printf("\t-g | --gpt            force disk with invalid PMBR to be treated as GPT\n");
+	printf("\t-H | --acpi_hid XXXX  set the ACPI HID (used with -i)\n");
+	printf("\t-i | --iface name     create a netboot entry for the named interface\n");
 	printf("\t-l | --loader name    (defaults to \\elilo.efi)\n");
 	printf("\t-L | --label label    Boot manager display label (defaults to \"Linux\")\n");
 	printf("\t-n | --bootnext XXXX  set BootNext to XXXX (hex)\n");
-	//printf("\t-N | --delete-bootnext delete BootNext\n");
-	//printf("\t-o | --bootorder XXXX,YYYY,ZZZZ,...     explicitly set BootOrder (hex)\n");
-	//printf("\t-O | --delete-bootorder delete BootOrder\n");
+	printf("\t-N | --delete-bootnext delete BootNext\n");
+	printf("\t-o | --bootorder XXXX,YYYY,ZZZZ,...     explicitly set BootOrder (hex)\n");
+	printf("\t-O | --delete-bootorder delete BootOrder\n");
 	printf("\t-p | --part part      (defaults to 1) containing loader\n");
-	//printf("\t-q | --quiet            be quiet\n");
-	//printf("\t   | --test filename    don't write to NVRAM, write to filename.\n");
-        printf("\t-r | --read		-r [var name] returns variable value \n");
+	printf("\t-q | --quiet            be quiet\n");
+	printf("\t   | --test filename    don't write to NVRAM, write to filename.\n");
+        printf("\t-r | --read-NIBIOS	-r [var name] returns  NIBIOSFeedback variable value \n");
         printf("\t-s | --	  	-s [var name] removes variable\n");
-	//printf("\t-t | --timeout seconds  set boot manager timeout waiting for user input.\n");
-	//printf("\t-T | --delete-timeout   delete Timeout.\n");
-	//printf("\t-u | --unicode | --UCS-2  pass extra args as UCS-2 (default is ASCII)\n");
-	//printf("\t-U | --acpi_uid XXXX    set the ACPI UID (used with -i)\n");
-	//printf("\t-v | --verbose          print additional information\n");
-	//printf("\t-V | --version          return version and exit\n");
-	//printf("\t-w | --write-signature  write unique sig to MBR if needed\n");
-	//printf("\t-@ | --append-binary-args file  append extra args from file (use \"-\" for stdin)\n");
+	printf("\t-t | --timeout seconds  set boot manager timeout waiting for user input.\n");
+	printf("\t-T | --delete-timeout   delete Timeout.\n");
+	printf("\t-u | --unicode | --UCS-2  pass extra args as UCS-2 (default is ASCII)\n");
+	printf("\t-U | --acpi_uid XXXX    set the ACPI UID (used with -i)\n");
+	printf("\t-v | --verbose          print additional information\n");
+	printf("\t-V | --version          return version and exit\n");
+	printf("\t-w | --write-signature  write unique sig to MBR if needed\n");
+	printf("\t-W | --write-NIBIOS  write NIBIOSFeedback flag\n");
+	printf("\t-@ | --append-binary-args file  append extra args from file (use \"-\" for stdin)\n");
 }
 
 static void
@@ -874,12 +875,13 @@ parse_opts(int argc, char **argv)
 			{"verbose",          optional_argument, 0, 'v'},
 			{"version",                no_argument, 0, 'V'},
 			{"write-signature",        no_argument, 0, 'w'},
+			{"write-NIBIOS",     required_argument, 0, 'W'},
 			{"append-binary-args", required_argument, 0, '@'},
 			{0, 0, 0, 0}
 		};
 
 		c = getopt_long (argc, argv,
-				 "AaBb:cd:e:f:E:gH:i:l:L:n:No:Op:qr:s:t:TuU:v::Vw@:",
+				 "AaBb:cd:e:f:E:gH:i:l:L:n:No:Op:qr:s:t:TuU:v::VwW:@:",
 				 long_options, &option_index);
 		if (c == -1)
 			break;
@@ -1038,7 +1040,7 @@ parse_opts(int argc, char **argv)
 			if (optarg) {
 				if (!strcmp(optarg, "v"))  opts.verbose = 2;
 				if (!strcmp(optarg, "vv")) opts.verbose = 3;
-				rc = sscanf(optarg, "%d", &num);
+ 				rc = sscanf(optarg, "%d", &num);
 				if (rc == 1)  opts.verbose = num;
 				else {
 					fprintf (stderr,"invalid numeric value %s\n",optarg);
@@ -1053,7 +1055,28 @@ parse_opts(int argc, char **argv)
 		case 'w':
 			opts.write_signature = 1;
 			break;
-
+                case 'W':
+                        val_len = 0;
+                        opts.editcreatevar = optarg;
+                        index = optind;
+                        while (index < argc && argv[index][0] != '-'){
+                                val_len = val_len + strlen(argv[index]);
+                                val_len = val_len + 1;//space character
+                                index = index + 1;
+                        }
+                        if (val_len == 0){
+                                break;
+                        }
+                        opts.value = malloc (val_len-1);//except last space
+                        index = optind+1;
+                        strcpy (opts.value, argv[optind]);
+                        while (index < argc && argv[index][0] != '-'){
+                                strcat(opts.value, " ");
+                                strcat(opts.value, argv[index]);
+                                index += 1;
+                        }
+                        optind = index-1;
+                        break;
 		default:
 			usage();
 			exit(1);
@@ -1068,50 +1091,63 @@ parse_opts(int argc, char **argv)
 }
 
 static efi_status_t
-editcreatevar()
+readwriteNIBIOSvar(efi_variable_t new_var)
 {
-	efi_variable_t new_var;
-	memset(&new_var, 0, sizeof(new_var));
-	fill_var(&new_var, opts.editcreatevar);
-
-	if (opts.value){
- 		new_var.DataSize = strlen(opts.value);
-		memset(&(new_var.Data), 0, new_var.DataSize);
-		memcpy(new_var.Data, opts.value, new_var.DataSize) ;
-	}
-
-	return create_or_edit_variable(&new_var);
+        int i;
+        efi_status_t status = EFI_NOT_FOUND;
+        const char * const niBIOSFlags[] = NIBIOS_FLAGS;
+        const char * const niBIOSFlag_format[] = NIBIOS_FLAG_FORMAT;
+        for(i=0; i<sizeof(niBIOSFlags)/sizeof(niBIOSFlags[0]); i++){
+		if ( opts.editcreatevar ){
+			if (!opts.value){
+				status = EFI_NOT_FOUND;
+				break;
+			}
+	        	else if( strcmp(opts.editcreatevar, niBIOSFlags[i])==0 ){
+                        	if (sscanf(opts.value,  niBIOSFlag_format[i], &new_var.Data[i]) != EOF){
+                        	        status = create_or_edit_variable(&new_var);
+                        	}
+	                	else {
+                        	      status = EFI_NOT_FOUND;
+					break;
+                        	}
+                	}
+		}
+		if ( opts.readvar ){
+			if ( strcmp(opts.readvar, niBIOSFlags[i])==0 ){
+				printf(niBIOSFlag_format[i], *&new_var.Data[i]);
+				printf("\n");
+			}
+		}
+        }
+        return status;
 }
 
 static efi_status_t
-showvariable()
+niBIOSvarOperation()
 {
-	struct dirent  **var_names = NULL;
-	efi_variable_t var;
-	efi_status_t status = EFI_NOT_FOUND;
-	int var_num, i ;
-
-	var_num = read_var_names(&var_names);
-	if(!var_names){
-		//wrong input
-		return EFI_NOT_FOUND;
-	}
-
-	memset(&var, 0, sizeof(var));
-	for(i=0; i<var_num; i++){
-		if(var_names[i]){
-			status = read_variable(var_names[i]->d_name,
-					       &var);
-		        if(status == EFI_SUCCESS){
-		                printf("%s\n", (char*) &var.Data);
-        		}
-			else{
-				return status;
-			}
-
-		}
-	}
-	return status;
+        struct dirent  **var_names = NULL;
+        efi_variable_t var;
+        efi_status_t status = EFI_NOT_FOUND;
+        int var_num, i ;
+        var_num = read_var_names(&var_names);
+        if(!var_names){
+                //wrong input
+                return EFI_NOT_FOUND;
+        }
+        memset(&var, 0, sizeof(var));
+        for(i=0; i<var_num; i++){
+                if(var_names[i]){
+                        status = read_variable(var_names[i]->d_name, &var);
+        	                if(status == EFI_SUCCESS){
+					status = readwriteNIBIOSvar(var);
+                	        }
+                	        else{
+                	                return status;
+                	        }
+                }
+        }
+        return status;
 }
 
 int
@@ -1227,11 +1263,11 @@ main(int argc, char **argv)
 	}
 
 	if (opts.editcreatevar){
-		editcreatevar();
+		niBIOSvarOperation();
 	}
 
 	if (opts.readvar){
-		showvariable();
+		niBIOSvarOperation();
 	}
 
 	free_dirents(boot_names, num_boot_names);

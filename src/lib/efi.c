@@ -46,6 +46,7 @@
 #include "efivars_procfs.h"
 #include "efivars_sysfs.h"
 #include "list.h"
+#include "niBIOSFeedback.h"
 
 static struct efivar_kernel_calls *fs_kernel_calls;
 
@@ -194,8 +195,8 @@ static int
 select_var_names(const struct dirent *d)
 {
 	int name_len;
-	name_len = strlen(opts.readvar);
-        if (!strncmp(d->d_name, opts.readvar, name_len) &&
+	name_len = strlen(NIBIOSVAR);
+        if (!strncmp(d->d_name, NIBIOSVAR, name_len) &&
             d->d_name[name_len] == '-')
                 return 1;
         return 0;
