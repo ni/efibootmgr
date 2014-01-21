@@ -1090,37 +1090,46 @@ parse_opts(int argc, char **argv)
 	}
 }
 
-static efi_status_t
-readwriteNIBIOSvar(efi_variable_t new_var)
+void print_NI_var(char *option, efi_variable_t new_var)
 {
-        int i;
-        efi_status_t status = EFI_NOT_FOUND;
-        const char * const niBIOSFlags[] = NIBIOS_FLAGS;
-        const char * const niBIOSFlag_format[] = NIBIOS_FLAG_FORMAT;
-        for(i=0; i<sizeof(niBIOSFlags)/sizeof(niBIOSFlags[0]); i++){
-		if ( opts.editcreatevar ){
-			if (!opts.value){
-				status = EFI_NOT_FOUND;
-				break;
-			}
-	        	else if( strcmp(opts.editcreatevar, niBIOSFlags[i])==0 ){
-                        	if (sscanf(opts.value,  niBIOSFlag_format[i], &new_var.Data[i]) != EOF){
-                        	        status = create_or_edit_variable(&new_var);
-                        	}
-	                	else {
-                        	      status = EFI_NOT_FOUND;
-					break;
-                        	}
-                	}
-		}
-		if ( opts.readvar ){
-			if ( strcmp(opts.readvar, niBIOSFlags[i])==0 ){
-				printf(niBIOSFlag_format[i], *&new_var.Data[i]);
-				printf("\n");
-			}
-		}
+        NIBIOSConsoleOut data;
+        if (!option){
+                return;
         }
-        return status;
+
+        memcpy(&data, &new_var.Data, sizeof(data));
+        if (!strcmp(option, CONSOLE_OUT)){
+		printf("%x\n", data.ConsoleOutEnable);
+        }//can be completed with any other flag added to the structure
+}
+
+int set_NI_var(char *option,  char * value, efi_variable_t * new_var)
+{
+        NIBIOSConsoleOut data;
+
+        if (!option){
+                return SET_EFIVAR_FAIL;
+        }
+        if (!value){
+                return SET_EFIVAR_FAIL;
+        }
+        if (!new_var){
+                return SET_EFIVAR_FAIL;
+        }
+        memcpy(&data, new_var->Data, sizeof(data));
+        if (!strcmp(option, CONSOLE_OUT)){
+		//validate value specific for CONSOLE_OUT
+		if(!strcmp(value, "1") || !strcmp(value, "0")){
+                        data.ConsoleOutEnable = atoi(value);
+		}
+		else
+		{
+			return SET_EFIVAR_FAIL;
+		}
+        }//can be completed with any other flag added to the structure
+
+        memcpy(new_var->Data, &data, sizeof(data));
+        return SET_EFIVAR_SUCCESS;
 }
 
 static efi_status_t
@@ -1132,20 +1141,38 @@ niBIOSvarOperation()
         int var_num, i ;
         var_num = read_var_names(&var_names);
         if(!var_names){
-                //wrong input
-                return EFI_NOT_FOUND;
+     		//NI variable does not exist
+		if(!opts.editcreatevar){
+			//return if this is not a write operation
+                	return EFI_NOT_FOUND;
+		}
         }
         memset(&var, 0, sizeof(var));
         for(i=0; i<var_num; i++){
                 if(var_names[i]){
                         status = read_variable(var_names[i]->d_name, &var);
-        	                if(status == EFI_SUCCESS){
-					status = readwriteNIBIOSvar(var);
-                	        }
-                	        else{
-                	                return status;
-                	        }
                 }
+        }
+
+	if ( opts.editcreatevar ){
+	        if (!opts.value){
+                	status = EFI_NOT_FOUND;
+                }
+		if(status != EFI_SUCCESS){
+			//NI variable does not exist
+			//create new NI EFI variable
+			fill_var(&var, NIBIOSVAR);
+			var.DataSize = sizeof(NIBIOSConsoleOut);
+		}
+		if(set_NI_var(opts.editcreatevar, opts.value, &var)){
+        	        status = create_or_edit_variable(&var);
+                }
+                else {
+	                status = EFI_NOT_FOUND;
+                }
+        }
+	else if( opts.readvar && status == EFI_SUCCESS){
+                print_NI_var(opts.readvar, var);
         }
         return status;
 }
