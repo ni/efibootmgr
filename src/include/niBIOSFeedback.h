@@ -11,7 +11,7 @@
 #define NIBIOSVAR "NIBIOSConsoleOut"
 
 //Define flag names
-#define CONSOLE_OUT "ConsoleOutEnable"
+#define CONSOLE_OUT "BootFirmwareConsoleOutEnable"
 
 typedef struct {
 	uint8_t ConsoleOutEnable;// 0 or 1
