@@ -1,3 +1,4 @@
+
 /*
   efibootmgr.c - Manipulates EFI variables as exported in /proc/efi/vars
 
@@ -1096,7 +1097,6 @@ void print_NI_var(char *option, efi_variable_t new_var)
         if (!option){
                 return;
         }
-
         memcpy(&data, &new_var.Data, sizeof(data));
         if (!strcmp(option, CONSOLE_OUT)){
 		printf("%x\n", data.ConsoleOutEnable);
@@ -1160,8 +1160,16 @@ niBIOSvarOperation()
                 }
 		if(status != EFI_SUCCESS){
 			//NI variable does not exist
-			//create new NI EFI variable
-			fill_var(&var, NIBIOSVAR);
+			//create new NI EFI variable, whith the specific NI GUID
+			efi_guid_t guid = NIBIOSGUID;
+
+			efichar_from_char(var.VariableName, NIBIOSVAR , 1024);
+
+			memcpy(&var.VendorGuid, &guid, sizeof(guid));
+			var.Attributes = EFI_VARIABLE_NON_VOLATILE
+				| EFI_VARIABLE_BOOTSERVICE_ACCESS
+				| EFI_VARIABLE_RUNTIME_ACCESS;
+
 			var.DataSize = sizeof(NIBIOSConsoleOut);
 		}
 		if(set_NI_var(opts.editcreatevar, opts.value, &var)){
